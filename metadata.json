@@ -1,0 +1,5 @@
+{
+  "name": "NoOnes UI Clone",
+  "description": "A high-fidelity clone of the NoOnes login and verification flow featuring dark mode, multi-digit OTP input, and responsive design.",
+  "requestFramePermissions": []
+}
