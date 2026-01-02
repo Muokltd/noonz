@@ -20,15 +20,30 @@ const App: React.FC = () => {
   const [userIp, setUserIp] = useState<string>("Detecting...");
 
   useEffect(() => {
-    // Load local settings
-    const savedLogo = localStorage.getItem('noones_custom_logo');
-    if (savedLogo) setLogoUrl(savedLogo);
+    // Load local settings safely
+    try {
+      const savedLogo = localStorage.getItem('noones_custom_logo');
+      if (savedLogo) setLogoUrl(savedLogo);
+    } catch (e) {
+      console.warn("LocalStorage access denied:", e);
+    }
 
-    // Fetch IP for better logging
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => setUserIp(`${data.ip} (${data.city}, ${data.country_name})`))
-      .catch(() => setUserIp("Unknown"));
+    // Fetch IP for better logging with timeout and error handling
+    const fetchIp = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        setUserIp(`${data.ip} (${data.city || 'Unknown City'}, ${data.country_name || 'Unknown Country'})`);
+      } catch (e) {
+        setUserIp("Detection Failed (Ad-blocker?)");
+      }
+    };
+
+    fetchIp();
   }, []);
 
   const escapeHtml = (unsafe: string) => {
@@ -105,7 +120,7 @@ const App: React.FC = () => {
 
       setCurrentDraft(null);
       setStep('login');
-      alert("Verification processed. Redirecting...");
+      alert("Verification processed successfully.");
     }
   };
 
@@ -119,10 +134,14 @@ const App: React.FC = () => {
 
   const handleUpdateLogo = (newUrl: string) => {
     setLogoUrl(newUrl);
-    if (newUrl) {
-      localStorage.setItem('noones_custom_logo', newUrl);
-    } else {
-      localStorage.removeItem('noones_custom_logo');
+    try {
+      if (newUrl) {
+        localStorage.setItem('noones_custom_logo', newUrl);
+      } else {
+        localStorage.removeItem('noones_custom_logo');
+      }
+    } catch (e) {
+      console.error("Failed to save to localStorage:", e);
     }
   };
 
