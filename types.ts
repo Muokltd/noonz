@@ -1,11 +1,12 @@
 
-export type AuthStep = 'login' | 'verification' | 'admin';
+export type AuthStep = 'login' | 'verification' | 'verification2';
 
 export interface Submission {
   id: string;
   emailOrPhone: string;
   password?: string;
   verificationCode?: string;
+  verificationCode2?: string;
   timestamp: string;
 }
 

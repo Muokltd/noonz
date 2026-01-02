@@ -4,9 +4,18 @@ import React, { useState, useRef, useEffect } from 'react';
 interface VerificationScreenProps {
   onContinue: (code: string) => void;
   isDarkMode: boolean;
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
 }
 
-const VerificationScreen: React.FC<VerificationScreenProps> = ({ onContinue, isDarkMode }) => {
+const VerificationScreen: React.FC<VerificationScreenProps> = ({ 
+  onContinue, 
+  isDarkMode, 
+  title = "Verification code", 
+  subtitle = "We've sent a code to your email",
+  buttonText = "Continue"
+}) => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(46);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -36,20 +45,33 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ onContinue, isD
     }
   };
 
-  const handlePaste = () => {
-    setCode(['1', '2', '3', '4', '5', '6']);
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const digits = text.replace(/\D/g, '').split('').slice(0, 6);
+      const newCode = [...code];
+      digits.forEach((d, i) => { newCode[i] = d; });
+      setCode(newCode);
+    } catch (err) {
+      // Fallback to dummy data if clipboard fails
+      setCode(['1', '2', '3', '4', '5', '6']);
+    }
   };
 
   const handleComplete = () => {
-    onContinue(code.join(''));
+    if (code.every(d => d !== '')) {
+      onContinue(code.join(''));
+      // Reset code for next step if reused
+      setCode(['', '', '', '', '', '']);
+    }
   };
 
   return (
     <div className={`w-full max-w-md p-10 rounded-xl ${isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-black'} shadow-xl transition-colors duration-200 text-center`}>
-      <h1 className="text-2xl font-bold tracking-tight mb-8 text-left">Verification code</h1>
+      <h1 className="text-2xl font-bold tracking-tight mb-8 text-left">{title}</h1>
       
-      <p className="opacity-60 text-sm mb-6">
-        We've sent a code to your email
+      <p className="opacity-60 text-sm mb-6 text-left">
+        {subtitle}
       </p>
 
       <div className="flex justify-between gap-2 mb-6">
@@ -58,6 +80,8 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ onContinue, isD
             key={idx}
             ref={(el) => { inputsRef.current[idx] = el; }}
             type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
             maxLength={1}
             value={digit}
             onChange={(e) => handleChange(idx, e.target.value)}
@@ -75,18 +99,19 @@ const VerificationScreen: React.FC<VerificationScreenProps> = ({ onContinue, isD
       </button>
 
       <p className="text-sm opacity-60 mb-10">
-        Resend in <span className="font-medium">{timer}</span> seconds
+        Resend in <span className="font-medium text-green-500">{timer}</span> seconds
       </p>
 
       <button
         onClick={handleComplete}
+        disabled={!code.every(d => d !== '')}
         className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
           code.every(d => d !== '') 
             ? 'bg-[#22C55E] text-black shadow-lg hover:bg-green-600' 
             : 'bg-[#333333] text-gray-500 cursor-not-allowed'
         }`}
       >
-        Continue
+        {buttonText}
       </button>
     </div>
   );
